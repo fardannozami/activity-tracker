@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"log"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -34,6 +35,14 @@ func NewPostgre(ctx context.Context, cfg Config) (*App, error) {
 	if err := db.Ping(ctxPing); err != nil {
 		return nil, err
 	}
+
+	log.Printf(
+		"database connected: host=%s db=%s minConns=%d maxConns=%d",
+		config.ConnConfig.Host,
+		config.ConnConfig.Database,
+		config.MinConns,
+		config.MaxConns,
+	)
 
 	return &App{
 		db: db,

@@ -8,7 +8,7 @@ type Config struct {
 
 func LoadConfig() (Config, error) {
 	cfg := Config{
-		DatabseUrl: getEnv("DATABSE_URL", "postgres://postgres@postgres:5432/activity_tracker?sslmode=disable"),
+		DatabseUrl: getEnv("DATABASE_URL", "postgres://postgres:postgres@postgres:5432/activity_tracker?sslmode=disable"),
 	}
 
 	return cfg, nil
