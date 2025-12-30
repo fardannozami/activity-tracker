@@ -49,7 +49,8 @@ func NewPostgre(ctx context.Context, cfg Config) (*App, error) {
 	)
 
 	return &App{
-		db: db,
+		db:  db,
+		cfg: cfg,
 	}, nil
 }
 
