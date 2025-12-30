@@ -19,10 +19,17 @@ func main() {
 		log.Fatalf("load config: %v", err)
 	}
 
-	_, err = app.NewPostgre(ctx, cfg)
+	a, err := app.NewPostgre(ctx, cfg)
 	if err != nil {
 		log.Fatalf("init app: %v", err)
 	}
+
+	go func() {
+		if err := a.RunHttp(ctx); err != nil {
+			log.Printf("http server:  %v", err)
+			cancel()
+		}
+	}()
 
 	// Graceful shutdown
 	sigCh := make(chan os.Signal, 1)

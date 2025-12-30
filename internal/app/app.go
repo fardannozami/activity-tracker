@@ -2,15 +2,19 @@ package app
 
 import (
 	"context"
+	"errors"
 	"log"
+	"net/http"
 	"time"
 
+	"github.com/fardannozami/activity-tracker/internal/httpapi"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type App struct {
-	db  *pgxpool.Pool
-	cfg Config
+	db         *pgxpool.Pool
+	cfg        Config
+	httpServer *http.Server
 }
 
 func NewPostgre(ctx context.Context, cfg Config) (*App, error) {
@@ -47,4 +51,21 @@ func NewPostgre(ctx context.Context, cfg Config) (*App, error) {
 	return &App{
 		db: db,
 	}, nil
+}
+
+func (a *App) RunHttp(ctx context.Context) error {
+	r := httpapi.NewRouter()
+
+	a.httpServer = &http.Server{
+		Addr:    a.cfg.HTTPAddr,
+		Handler: r,
+	}
+
+	log.Printf("listening on %s", a.cfg.HTTPAddr)
+	err := a.httpServer.ListenAndServe()
+	if errors.Is(err, http.ErrServerClosed) {
+		return nil
+	}
+
+	return err
 }
