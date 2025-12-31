@@ -12,5 +12,6 @@ FROM alpine:3.20
 WORKDIR /app
 RUN apk add --no-cache ca-certificates postgresql-client tzdata
 COPY --from=builder /out/api /app/api
+COPY migrations /app/migrations
 EXPOSE 8080
 CMD ["/app/api"]

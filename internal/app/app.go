@@ -18,7 +18,7 @@ type App struct {
 }
 
 func NewPostgre(ctx context.Context, cfg Config) (*App, error) {
-	config, err := pgxpool.ParseConfig(cfg.DatabseUrl)
+	config, err := pgxpool.ParseConfig(cfg.DatabaseUrl)
 	if err != nil {
 		return nil, err
 	}
