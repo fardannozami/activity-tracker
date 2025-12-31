@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/fardannozami/activity-tracker/internal/app/worker"
 	"github.com/fardannozami/activity-tracker/internal/httpapi"
 	"github.com/fardannozami/activity-tracker/internal/httpapi/handler"
 	"github.com/fardannozami/activity-tracker/internal/repo/postgres"
@@ -58,10 +59,26 @@ func NewPostgre(ctx context.Context, cfg Config) (*App, error) {
 }
 
 func (a *App) RunHttp(ctx context.Context) error {
+	// repos
 	clientRepo := postgres.NewClientRepo(a.db)
+	apiHitRepo := postgres.NewApiHitRepo(a.db)
+
+	// worker
+	batcher := worker.NewBatcher(apiHitRepo)
+	go batcher.Run(ctx)
+
+	// usecase
 	clientUC := usecase.NewRegisterClientUC(clientRepo)
+	recordUC := &usecase.RecordHitUC{
+		EnqueueFn: func(hit usecase.HitIn) {
+			batcher.Enqueue(hit)
+		},
+	}
+
+	// handler
 	clientHandler := handler.NewClientHandler(clientUC)
-	r := httpapi.NewRouter(httpapi.Dependency{ClientHandler: clientHandler})
+	logHandler := handler.NewLogHandler(recordUC)
+	r := httpapi.NewRouter(httpapi.Dependency{ClientHandler: clientHandler, LogHandler: logHandler})
 
 	a.httpServer = &http.Server{
 		Addr:    a.cfg.HTTPAddr,
