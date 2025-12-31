@@ -2,6 +2,8 @@ package worker
 
 import (
 	"context"
+	"errors"
+	"log"
 	"time"
 
 	"github.com/fardannozami/activity-tracker/internal/repo/postgres"
@@ -15,22 +17,23 @@ type Batcher struct {
 	flushEvery time.Duration
 }
 
+var ErrQueueFull = errors.New("log queue full")
+
 func NewBatcher(apiHitRepo *postgres.ApiHitRepo) *Batcher {
 	return &Batcher{
 		apiHitRepo: apiHitRepo,
 		in:         make(chan usecase.HitIn, 5000),
 		batchSize:  200,
-		flushEvery: 1 * time.Second,
+		flushEvery: 30 * time.Second,
 	}
 }
 
-func (b *Batcher) Enqueue(hit usecase.HitIn) {
+func (b *Batcher) Enqueue(hit usecase.HitIn) error {
 	select {
 	case b.in <- hit:
+		return nil
 	default:
-		// channel full: drop OR block depending requirement.
-		// for test, better block a tiny bit:
-		b.in <- hit
+		return ErrQueueFull
 	}
 }
 
@@ -67,7 +70,9 @@ func (b *Batcher) Run(ctx context.Context) {
 		}
 
 		// 1) raw insert
-		_ = b.apiHitRepo.BulkInsert(ctx, rows)
+		if err := b.apiHitRepo.BulkInsert(ctx, rows); err != nil {
+			log.Printf("bulk insert api_hits failed: %v", err)
+		}
 
 		buf = buf[:0]
 	}

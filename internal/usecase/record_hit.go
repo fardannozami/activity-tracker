@@ -7,7 +7,7 @@ import (
 
 type RecordHitUC struct {
 	// Cache     cache.MemoryCache
-	EnqueueFn func(hit HitIn)
+	EnqueueFn func(hit HitIn) error
 }
 
 type HitIn struct {
@@ -19,7 +19,7 @@ type HitIn struct {
 
 func (uc *RecordHitUC) Execute(ctx context.Context, in HitIn) error {
 	if uc.EnqueueFn != nil {
-		uc.EnqueueFn(in)
+		return uc.EnqueueFn(in)
 	}
 
 	return nil

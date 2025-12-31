@@ -70,8 +70,8 @@ func (a *App) RunHttp(ctx context.Context) error {
 	// usecase
 	clientUC := usecase.NewRegisterClientUC(clientRepo)
 	recordUC := &usecase.RecordHitUC{
-		EnqueueFn: func(hit usecase.HitIn) {
-			batcher.Enqueue(hit)
+		EnqueueFn: func(hit usecase.HitIn) error {
+			return batcher.Enqueue(hit)
 		},
 	}
 
