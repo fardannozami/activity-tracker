@@ -3,7 +3,9 @@ package postgres
 import (
 	"context"
 
+	domainErr "github.com/fardannozami/activity-tracker/internal/domain/errors"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -25,6 +27,12 @@ func (c *ClientRepo) Create(ctx context.Context, name, email, APIKeyHash string)
 	query := `INSERT INTO clients (id,name,email,api_key_hash) VALUES ($1,$2,$3,$4)`
 	_, err := c.db.Exec(ctx, query, id, name, email, APIKeyHash)
 	if err != nil {
+		if pgErr, ok := err.(*pgconn.PgError); ok {
+			switch pgErr.Code {
+			case "23505":
+				return ClientRow{}, domainErr.ErrClientEmailAlreadyExists
+			}
+		}
 		return ClientRow{}, err
 	}
 
