@@ -8,6 +8,9 @@ import (
 	"time"
 
 	"github.com/fardannozami/activity-tracker/internal/httpapi"
+	"github.com/fardannozami/activity-tracker/internal/httpapi/handler"
+	"github.com/fardannozami/activity-tracker/internal/repo/postgres"
+	"github.com/fardannozami/activity-tracker/internal/usecase"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -55,7 +58,10 @@ func NewPostgre(ctx context.Context, cfg Config) (*App, error) {
 }
 
 func (a *App) RunHttp(ctx context.Context) error {
-	r := httpapi.NewRouter()
+	clientRepo := postgres.NewClientRepo(a.db)
+	clientUC := usecase.NewRegisterClientUC(clientRepo)
+	clientHandler := handler.NewClientHandler(clientUC)
+	r := httpapi.NewRouter(httpapi.Dependency{ClientHandler: clientHandler})
 
 	a.httpServer = &http.Server{
 		Addr:    a.cfg.HTTPAddr,
