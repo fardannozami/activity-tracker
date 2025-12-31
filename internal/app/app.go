@@ -10,6 +10,9 @@ import (
 	"github.com/fardannozami/activity-tracker/internal/app/httpapi"
 	"github.com/fardannozami/activity-tracker/internal/app/httpapi/handler"
 	"github.com/fardannozami/activity-tracker/internal/app/worker"
+	postgresinfra "github.com/fardannozami/activity-tracker/internal/infra/postgres"
+	redisinfra "github.com/fardannozami/activity-tracker/internal/infra/redis"
+	"github.com/fardannozami/activity-tracker/internal/repo/cache"
 	"github.com/fardannozami/activity-tracker/internal/repo/postgres"
 	"github.com/fardannozami/activity-tracker/internal/usecase"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -27,13 +30,7 @@ func NewPostgre(ctx context.Context, cfg Config) (*App, error) {
 		return nil, err
 	}
 
-	config.MinConns = 1
-	config.MaxConns = 5
-	config.MaxConnIdleTime = 5 * time.Minute
-	config.MaxConnLifetime = 30 * time.Minute
-	config.HealthCheckPeriod = 1 * time.Minute
-
-	db, err := pgxpool.NewWithConfig(ctx, config)
+	db, err := postgresinfra.NewPool(ctx, cfg.DatabaseUrl)
 	if err != nil {
 		return nil, err
 	}
@@ -59,12 +56,25 @@ func NewPostgre(ctx context.Context, cfg Config) (*App, error) {
 }
 
 func (a *App) RunHttp(ctx context.Context) error {
+	// Redis optional -> fallback memory
+	mem := cache.NewMemoryCache()
+	var ca cache.Cache = mem
+
+	rdb := redisinfra.New(a.cfg.RedisAddr)
+	if err := redisinfra.Ping(ctx, rdb); err == nil {
+		ca = cache.NewRedis(rdb)
+		log.Println("redis: connected")
+	} else {
+		log.Println("redis: down, using memory fallback")
+	}
+
 	// repos
 	clientRepo := postgres.NewClientRepo(a.db)
 	apiHitRepo := postgres.NewApiHitRepo(a.db)
+	usageRepo := postgres.NewUsageRepo(a.db)
 
 	// worker
-	batcher := worker.NewBatcher(apiHitRepo)
+	batcher := worker.NewBatcher(apiHitRepo, usageRepo)
 	go batcher.Run(ctx)
 
 	// usecase
@@ -73,6 +83,7 @@ func (a *App) RunHttp(ctx context.Context) error {
 		EnqueueFn: func(hit usecase.HitIn) error {
 			return batcher.Enqueue(hit)
 		},
+		Cache: ca,
 	}
 
 	// handler

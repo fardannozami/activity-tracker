@@ -3,7 +3,6 @@ package worker
 import (
 	"context"
 	"errors"
-	"log"
 	"time"
 
 	"github.com/fardannozami/activity-tracker/internal/repo/postgres"
@@ -11,7 +10,8 @@ import (
 )
 
 type Batcher struct {
-	apiHitRepo *postgres.ApiHitRepo
+	hitRepo    *postgres.ApiHitRepo
+	usage      postgres.UsageWriter
 	in         chan usecase.HitIn
 	batchSize  int
 	flushEvery time.Duration
@@ -19,12 +19,13 @@ type Batcher struct {
 
 var ErrQueueFull = errors.New("log queue full")
 
-func NewBatcher(apiHitRepo *postgres.ApiHitRepo) *Batcher {
+func NewBatcher(hitRepo *postgres.ApiHitRepo, uw postgres.UsageWriter) *Batcher {
 	return &Batcher{
-		apiHitRepo: apiHitRepo,
+		hitRepo:    hitRepo,
+		usage:      uw,
 		in:         make(chan usecase.HitIn, 5000),
 		batchSize:  200,
-		flushEvery: 30 * time.Second,
+		flushEvery: 1 * time.Second,
 	}
 }
 
@@ -70,8 +71,18 @@ func (b *Batcher) Run(ctx context.Context) {
 		}
 
 		// 1) raw insert
-		if err := b.apiHitRepo.BulkInsert(ctx, rows); err != nil {
-			log.Printf("bulk insert api_hits failed: %v", err)
+		_ = b.hitRepo.BulkInsert(ctx, rows)
+
+		// 2) aggregated upserts
+		if b.usage != nil {
+			usageHits := make([]postgres.UsageHit, 0, len(buf))
+			for _, h := range buf {
+				usageHits = append(usageHits, postgres.UsageHit{
+					ClientID:  h.ClientID,
+					Timestamp: h.Timestamp,
+				})
+			}
+			_ = b.usage.UpsertAggregates(ctx, usageHits)
 		}
 
 		buf = buf[:0]
