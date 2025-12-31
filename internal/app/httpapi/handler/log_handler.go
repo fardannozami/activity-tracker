@@ -36,12 +36,21 @@ func (h *LogHandler) Create(c *gin.Context) {
 		return
 	}
 
-	// _ = h.Record.Execute(c.Request.Context(), usecase.HitIn{
-	// 	ClientID:  cid,
-	// 	IP:        req.IP,
-	// 	Endpoint:  req.Endpoint,
-	// 	Timestamp: ts,
-	// })
+	ts, err := time.Parse(time.RFC3339, req.Timestamp)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "timestamp must be RFC3339"})
+		return
+	}
+
+	clientID, _ := c.Get("client_id")
+	cid, _ := clientID.(string)
+
+	_ = h.Record.Execute(c.Request.Context(), usecase.HitIn{
+		ClientID:  cid,
+		IP:        req.IP,
+		Endpoint:  req.Endpoint,
+		Timestamp: ts,
+	})
 
 	c.JSON(http.StatusOK, gin.H{"status": "ok"})
 }

@@ -22,10 +22,10 @@ type ClientRow struct {
 	APIKeyHash string
 }
 
-func (c *ClientRepo) Create(ctx context.Context, name, email, APIKeyHash string) (ClientRow, error) {
+func (c *ClientRepo) Create(ctx context.Context, name, email, APIKeyHash, apiKeyPrefix string) (ClientRow, error) {
 	id := uuid.New().String()
-	query := `INSERT INTO clients (id,name,email,api_key_hash) VALUES ($1,$2,$3,$4)`
-	_, err := c.db.Exec(ctx, query, id, name, email, APIKeyHash)
+	query := `INSERT INTO clients (id,name,email,api_key_hash,api_key_prefix) VALUES ($1,$2,$3,$4,$5)`
+	_, err := c.db.Exec(ctx, query, id, name, email, APIKeyHash, apiKeyPrefix)
 	if err != nil {
 		if pgErr, ok := err.(*pgconn.PgError); ok {
 			switch pgErr.Code {
@@ -37,4 +37,15 @@ func (c *ClientRepo) Create(ctx context.Context, name, email, APIKeyHash string)
 	}
 
 	return ClientRow{ID: id, Name: name, Email: email, APIKeyHash: APIKeyHash}, nil
+}
+
+func (r *ClientRepo) GetByAPIKeyPrefix(ctx context.Context, prefix string) (ClientRow, bool, error) {
+	var out ClientRow
+	err := r.db.QueryRow(ctx,
+		`SELECT id,name,email,api_key_hash FROM clients WHERE api_key_prefix=$1`, prefix,
+	).Scan(&out.ID, &out.Name, &out.Email, &out.APIKeyHash)
+	if err != nil {
+		return ClientRow{}, false, nil
+	}
+	return out, true, nil
 }

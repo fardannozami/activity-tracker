@@ -28,8 +28,9 @@ func (r *RegisterClientUC) Execute(ctx context.Context, name, email string) (Reg
 	if err != nil {
 		return RegisterOut{}, err
 	}
+	prefix := service.APIKeyPrefix(apiKey)
 
-	row, err := r.Client.Create(ctx, name, email, hash)
+	row, err := r.Client.Create(ctx, name, email, hash, prefix)
 	if err != nil {
 		return RegisterOut{}, err
 	}
