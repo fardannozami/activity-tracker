@@ -49,3 +49,26 @@ func (r *ClientRepo) GetByAPIKeyPrefix(ctx context.Context, prefix string) (Clie
 	}
 	return out, true, nil
 }
+
+func (r *ClientRepo) GetByEmail(ctx context.Context, email string) (ClientRow, bool, error) {
+	var out ClientRow
+	err := r.db.QueryRow(ctx,
+		`SELECT id,name,email,api_key_hash FROM clients WHERE email=$1`, email,
+	).Scan(&out.ID, &out.Name, &out.Email, &out.APIKeyHash)
+	if err != nil {
+		// pgx returns error for not found; keep simple:
+		return ClientRow{}, false, nil
+	}
+	return out, true, nil
+}
+
+func (r *ClientRepo) GetByID(ctx context.Context, id string) (ClientRow, bool, error) {
+	var out ClientRow
+	err := r.db.QueryRow(ctx,
+		`SELECT id,name,email,api_key_hash FROM clients WHERE id=$1`, id,
+	).Scan(&out.ID, &out.Name, &out.Email, &out.APIKeyHash)
+	if err != nil {
+		return ClientRow{}, false, nil
+	}
+	return out, true, nil
+}

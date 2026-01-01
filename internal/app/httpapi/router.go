@@ -5,6 +5,7 @@ import (
 
 	"github.com/fardannozami/activity-tracker/internal/app/httpapi/handler"
 	"github.com/fardannozami/activity-tracker/internal/app/httpapi/middleware"
+	"github.com/fardannozami/activity-tracker/internal/domain/service"
 	"github.com/fardannozami/activity-tracker/internal/repo/postgres"
 	"github.com/gin-gonic/gin"
 )
@@ -13,7 +14,9 @@ type Dependency struct {
 	ClientHandler *handler.ClientHandler
 	LogHandler    *handler.LogHandler
 	UsageHandler  *handler.UsageHandler
+	AuthHandler   *handler.AuthHandler
 	ClientsRepo   *postgres.ClientRepo
+	Token         service.TokenService
 }
 
 func NewRouter(d Dependency) *gin.Engine {
@@ -22,9 +25,11 @@ func NewRouter(d Dependency) *gin.Engine {
 
 	api := r.Group("/api")
 	api.POST("/register", d.ClientHandler.RegisterClient)
+	api.POST("/auth/token", d.AuthHandler.Token)
+
 	api.POST("/logs", middleware.APIKey(d.ClientsRepo), d.LogHandler.Create)
 
-	usage := api.Group("/usage", middleware.APIKey(d.ClientsRepo))
+	usage := api.Group("/usage", middleware.JWT(d.Token))
 	usage.GET("/daily", d.UsageHandler.Daily)
 	usage.GET("/top", d.UsageHandler.Top)
 

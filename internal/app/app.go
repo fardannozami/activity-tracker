@@ -10,6 +10,7 @@ import (
 	"github.com/fardannozami/activity-tracker/internal/app/httpapi"
 	"github.com/fardannozami/activity-tracker/internal/app/httpapi/handler"
 	"github.com/fardannozami/activity-tracker/internal/app/worker"
+	"github.com/fardannozami/activity-tracker/internal/domain/service"
 	postgresinfra "github.com/fardannozami/activity-tracker/internal/infra/postgres"
 	redisinfra "github.com/fardannozami/activity-tracker/internal/infra/redis"
 	"github.com/fardannozami/activity-tracker/internal/repo/cache"
@@ -77,8 +78,12 @@ func (a *App) RunHttp(ctx context.Context) error {
 	batcher := worker.NewBatcher(apiHitRepo, usageRepo)
 	go batcher.Run(ctx)
 
+	// service
+	tokenService := service.TokenService{Secret: []byte(a.cfg.JwtSecret)}
+
 	// usecase
 	clientUC := usecase.NewRegisterClientUC(clientRepo)
+	tokenUC := usecase.IssueTokenUC{Clients: clientRepo, Tokens: tokenService}
 	recordUC := &usecase.RecordHitUC{
 		EnqueueFn: func(hit usecase.HitIn) error {
 			return batcher.Enqueue(hit)
@@ -90,11 +95,15 @@ func (a *App) RunHttp(ctx context.Context) error {
 	clientHandler := handler.NewClientHandler(clientUC)
 	logHandler := handler.NewLogHandler(recordUC)
 	usageHandler := handler.NewUsageHandler(ca, usageRepo)
+	authHandler := handler.NewAuthHandler(&tokenUC)
+
 	r := httpapi.NewRouter(httpapi.Dependency{
 		ClientHandler: clientHandler,
 		LogHandler:    logHandler,
 		UsageHandler:  usageHandler,
+		AuthHandler:   authHandler,
 		ClientsRepo:   clientRepo,
+		Token:         tokenService,
 	})
 
 	a.httpServer = &http.Server{
