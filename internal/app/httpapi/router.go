@@ -12,6 +12,7 @@ import (
 type Dependency struct {
 	ClientHandler *handler.ClientHandler
 	LogHandler    *handler.LogHandler
+	UsageHandler  *handler.UsageHandler
 	ClientsRepo   *postgres.ClientRepo
 }
 
@@ -22,6 +23,10 @@ func NewRouter(d Dependency) *gin.Engine {
 	api := r.Group("/api")
 	api.POST("/register", d.ClientHandler.RegisterClient)
 	api.POST("/logs", middleware.APIKey(d.ClientsRepo), d.LogHandler.Create)
+
+	usage := api.Group("/usage", middleware.APIKey(d.ClientsRepo))
+	usage.GET("/daily", d.UsageHandler.Daily)
+	usage.GET("/top", d.UsageHandler.Top)
 
 	r.NoRoute(func(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "not found"})

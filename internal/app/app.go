@@ -89,7 +89,13 @@ func (a *App) RunHttp(ctx context.Context) error {
 	// handler
 	clientHandler := handler.NewClientHandler(clientUC)
 	logHandler := handler.NewLogHandler(recordUC)
-	r := httpapi.NewRouter(httpapi.Dependency{ClientHandler: clientHandler, LogHandler: logHandler, ClientsRepo: clientRepo})
+	usageHandler := handler.NewUsageHandler(ca, usageRepo)
+	r := httpapi.NewRouter(httpapi.Dependency{
+		ClientHandler: clientHandler,
+		LogHandler:    logHandler,
+		UsageHandler:  usageHandler,
+		ClientsRepo:   clientRepo,
+	})
 
 	a.httpServer = &http.Server{
 		Addr:    a.cfg.HTTPAddr,
