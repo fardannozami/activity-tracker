@@ -46,6 +46,42 @@ go run ./cmd/api
 curl http://localhost:8080/health
 ```
 
+## Contoh Penggunaan API (curl)
+
+1) Register client (dapatkan API key)
+```
+curl -X POST http://localhost:8080/api/register \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Demo","email":"demo@example.com"}'
+```
+
+2) Ambil JWT (Bearer token) dari API key + email
+```
+curl -X POST http://localhost:8080/api/auth/token \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"demo@example.com","api_key":"<api_key_dari_register>"}'
+```
+
+3) Kirim log aktivitas (pakai API key)
+```
+curl -X POST http://localhost:8080/api/logs \
+  -H 'Content-Type: application/json' \
+  -H 'X-API-Key: <api_key_dari_register>' \
+  -d '{"ip":"1.2.3.4","endpoint":"/ping","timestamp":"2026-01-01T14:00:00+07:00"}'
+```
+
+4) Lihat usage harian 7 hari terakhir (pakai Bearer token)
+```
+curl -X GET http://localhost:8080/api/usage/daily \
+  -H 'Authorization: Bearer <access_token>'
+```
+
+5) Lihat top usage 24 jam terakhir (pakai Bearer token)
+```
+curl -X GET http://localhost:8080/api/usage/top \
+  -H 'Authorization: Bearer <access_token>'
+```
+
 ## Troubleshooting Singkat
 
 - Jika response `/api/usage/top` selalu `null`, pastikan ada log masuk lewat `/api/logs` dan cache `usage:top:last24h` tidak tersimpan dari state kosong (restart service atau hapus key di Redis).
