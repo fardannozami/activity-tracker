@@ -1,0 +1,185 @@
+basePath: /
+definitions:
+  handler.logReq:
+    properties:
+      endpoint:
+        example: /orders
+        type: string
+      ip:
+        example: 1.1.1.1
+        type: string
+      timestamp:
+        example: "2026-01-02T14:00:00+07:00"
+        type: string
+    required:
+    - endpoint
+    - ip
+    - timestamp
+    type: object
+  handler.registerReq:
+    properties:
+      email:
+        example: email@email.com
+        type: string
+      name:
+        example: name
+        type: string
+    required:
+    - email
+    - name
+    type: object
+  handler.tokenReq:
+    properties:
+      api_key:
+        example: ab90c204707f8251cf370a7a60e3b31f72dd58fe783c6d480c163835f8cefd77
+        type: string
+      email:
+        example: halo@halo.com
+        type: string
+    required:
+    - api_key
+    - email
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@example.com
+    name: API Support
+  description: High-throughput activity tracking service
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: https://example.com/terms
+  title: Activity Tracker API
+  version: "1.0"
+paths:
+  /api/auth/token:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Credentials
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.tokenReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Issue JWT token
+      tags:
+      - Auth
+  /api/logs:
+    post:
+      consumes:
+      - application/json
+      description: Ingest API usage logs (high throughput)
+      parameters:
+      - description: API Key
+        example: ab90c204707f8251cf370a7a60e3b31f72dd58fe783c6d480c163835f8cefd77
+        in: header
+        name: X-API-Key
+        required: true
+        type: string
+      - description: Log payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.logReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Record API usage log
+      tags:
+      - Logs
+  /api/register:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Client info
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.registerReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Register new client
+      tags:
+      - Client
+  /api/usage/daily:
+    get:
+      parameters:
+      - description: Date (YYYY-MM-DD)
+        in: query
+        name: date
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema: {}
+      security:
+      - BearerAuth: []
+      summary: Get daily usage
+      tags:
+      - Usage
+  /api/usage/top:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema: {}
+      security:
+      - BearerAuth: []
+      summary: Get Top usage
+      tags:
+      - Usage
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: X-API-Key
+    type: apiKey
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

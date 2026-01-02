@@ -46,6 +46,16 @@ go run ./cmd/api
 curl http://localhost:8080/health
 ```
 
+## Swagger (OpenAPI)
+
+- UI: `http://localhost:8080/swagger/index.html`
+- Spec: `internal/docs/swagger.json` dan `internal/docs/swagger.yaml`
+- Regenerasi manual (opsional):
+```
+go run github.com/swaggo/swag/cmd/swag@v1.16.6 init -g cmd/api/main.go -o internal/docs --parseInternal
+```
+- Saat build image Docker, swagger di-generate otomatis.
+
 ## Contoh Penggunaan API (curl)
 
 1) Register client (dapatkan API key)

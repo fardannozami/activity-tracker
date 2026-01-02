@@ -6,6 +6,8 @@ RUN apk add --no-cache git ca-certificates
 COPY go.mod ./
 RUN go mod download
 COPY . .
+RUN go install github.com/swaggo/swag/cmd/swag@v1.16.6
+RUN /go/bin/swag init -g cmd/api/main.go -o internal/docs --parseInternal
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags="-s -w" -o /out/api ./cmd/api
 
 FROM alpine:3.20

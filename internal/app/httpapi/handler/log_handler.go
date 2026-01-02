@@ -20,11 +20,22 @@ func NewLogHandler(uc *usecase.RecordHitUC) *LogHandler {
 }
 
 type logReq struct {
-	IP        string `json:"ip" binding:"required"`
-	Endpoint  string `json:"endpoint" binding:"required"`
-	Timestamp string `json:"timestamp" binding:"required"`
+	IP        string `json:"ip" binding:"required" example:"1.1.1.1"`
+	Endpoint  string `json:"endpoint" binding:"required" example:"/orders"`
+	Timestamp string `json:"timestamp" binding:"required" example:"2026-01-02T14:00:00+07:00"`
 }
 
+// CreateLog godoc
+// @Summary Record API usage log
+// @Description Ingest API usage logs (high throughput)
+// @Tags Logs
+// @Accept json
+// @Produce json
+// @Param X-API-Key header string true "API Key" example(ab90c204707f8251cf370a7a60e3b31f72dd58fe783c6d480c163835f8cefd77)
+// @Param body body logReq true "Log payload"
+// @Success 200 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Router /api/logs [post]
 func (h *LogHandler) Create(c *gin.Context) {
 	var req logReq
 	if err := c.ShouldBindJSON(&req); err != nil {

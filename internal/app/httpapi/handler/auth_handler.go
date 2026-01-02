@@ -12,10 +12,19 @@ type AuthHandler struct{ Issue *usecase.IssueTokenUC }
 func NewAuthHandler(uc *usecase.IssueTokenUC) *AuthHandler { return &AuthHandler{Issue: uc} }
 
 type tokenReq struct {
-	Email  string `json:"email" binding:"required,email"`
-	APIKey string `json:"api_key" binding:"required"`
+	Email  string `json:"email" binding:"required,email" example:"halo@halo.com"`
+	APIKey string `json:"api_key" binding:"required" example:"ab90c204707f8251cf370a7a60e3b31f72dd58fe783c6d480c163835f8cefd77"`
 }
 
+// IssueToken godoc
+// @Summary Issue JWT token
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param body body tokenReq true "Credentials"
+// @Success 200 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Router /api/auth/token [post]
 func (h *AuthHandler) Token(c *gin.Context) {
 	var req tokenReq
 	if err := c.ShouldBindJSON(&req); err != nil {

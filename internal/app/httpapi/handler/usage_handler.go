@@ -24,6 +24,14 @@ func NewUsageHandler(ca cache.Cache, ur *postgres.UsageRepo) *UsageHandler {
 	}
 }
 
+// GetDailyUsage godoc
+// @Summary Get daily usage
+// @Tags Usage
+// @Security BearerAuth
+// @Produce json
+// @Param date query string true "Date (YYYY-MM-DD)"
+// @Success 200 {object} any
+// @Router /api/usage/daily [get]
 func (h *UsageHandler) Daily(c *gin.Context) {
 	clientId, _ := c.Get("client_id")
 	cid, _ := clientId.(string)
@@ -54,6 +62,13 @@ func (h *UsageHandler) Daily(c *gin.Context) {
 	c.Data(http.StatusOK, "application/json", b)
 }
 
+// GetTopUsage godoc
+// @Summary Get Top usage
+// @Tags Usage
+// @Security BearerAuth
+// @Produce json
+// @Success 200 {object} any
+// @Router /api/usage/top [get]
 func (h *UsageHandler) Top(c *gin.Context) {
 	// Global ranking, cache key based on time bucket (or global version)
 	key := "usage:top:last24h"

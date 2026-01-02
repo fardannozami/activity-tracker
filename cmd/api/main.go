@@ -33,6 +33,27 @@ func main() {
 	}
 
 	// init http server
+	// @title Activity Tracker API
+	// @version 1.0
+	// @description High-throughput activity tracking service
+	// @termsOfService https://example.com/terms
+
+	// @contact.name API Support
+	// @contact.email support@example.com
+
+	// @license.name MIT
+	// @license.url https://opensource.org/licenses/MIT
+
+	// @host localhost:8080
+	// @BasePath /
+
+	// @securityDefinitions.apikey ApiKeyAuth
+	// @in header
+	// @name X-API-Key
+	//
+	// @securityDefinitions.apikey BearerAuth
+	// @in header
+	// @name Authorization
 	go func() {
 		if err := a.RunHttp(ctx); err != nil {
 			log.Printf("http server:  %v", err)
